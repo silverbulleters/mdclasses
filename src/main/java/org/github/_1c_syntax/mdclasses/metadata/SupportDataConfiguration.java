@@ -29,7 +29,13 @@ public class SupportDataConfiguration {
     public SupportDataConfiguration(Path pathToBinFile) {
         this.pathToBinFile = pathToBinFile;
         LOGGER.info("Чтения файла ParentConfigurations.bin");
-        load();
+        try {
+            load();
+        }
+        catch (Exception e){
+            LOGGER.error("Не удалось прочитать ParentConfigurations.bin по причине: " + e.toString());
+        }
+
     }
 
     private void load() {
