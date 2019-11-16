@@ -10,34 +10,36 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Map;
 
 public class SupportDataConfiguration {
 
   private HashMap<String, SupportVariant> supportMap = new HashMap<>();
   private Path pathToBinFile;
 
-  private final int POINT_COUNT_CONFIGURATION = 2;
-  private final int SHIFT_CONFIGURATION_VERSION = 3;
-  private final int SHIFT_CONFIGURATION_PRODUCER = 4;
-  private final int SHIFT_CONFIGURATION_NAME = 5;
-  private final int SHIFT_CONFIGURATION_COUNT_OBJECT = 6;
-  private final int SHIFT_OBJECT_COUNT = 7;
-  private final int COUNT_ELEMENT_OBJECT = 4;
+  private static final int POINT_COUNT_CONFIGURATION = 2;
+  private static final int SHIFT_CONFIGURATION_VERSION = 3;
+  private static final int SHIFT_CONFIGURATION_PRODUCER = 4;
+  private static final int SHIFT_CONFIGURATION_NAME = 5;
+  private static final int SHIFT_CONFIGURATION_COUNT_OBJECT = 6;
+  private static final int SHIFT_OBJECT_COUNT = 7;
+  private static final int COUNT_ELEMENT_OBJECT = 4;
 
   private static final Logger LOGGER = LoggerFactory.getLogger(SupportDataConfiguration.class.getSimpleName());
 
   public SupportDataConfiguration(Path pathToBinFile) {
     this.pathToBinFile = pathToBinFile;
     LOGGER.info("Чтения файла ParentConfigurations.bin");
-    load();
+    read();
   }
 
-  private void load() {
+  private void read() {
 
     String data = readBinFile(pathToBinFile);
     String[] dataStrings = data.split(",");
     int countConfiguration = Integer.parseInt(dataStrings[POINT_COUNT_CONFIGURATION]);
-    LOGGER.info("Найдено конфигураций: " + countConfiguration);
+    String info = String.format("Найдено конфигураций: %s", countConfiguration);
+    LOGGER.info(info);
 
     int startPoint = 3;
     for (int numberConfiguration = 1; numberConfiguration <= countConfiguration; numberConfiguration++) {
@@ -46,18 +48,19 @@ public class SupportDataConfiguration {
       String configurationName = dataStrings[startPoint + SHIFT_CONFIGURATION_NAME];
       int countObjectsConfiguration = Integer.parseInt(dataStrings[startPoint + SHIFT_CONFIGURATION_COUNT_OBJECT]);
 
-      LOGGER.info(String.format(
+      info = String.format(
           "Конфигурация: %s Версия: %s Поставщик: %s Количество обектов: %s",
           configurationName,
           configurationVersion,
           configurationProducer,
-          countObjectsConfiguration));
+          countObjectsConfiguration);
+      LOGGER.info(info);
 
       int startObjectPoint = startPoint + SHIFT_OBJECT_COUNT;
-      for (int numberObject = 0; numberObject < countObjectsConfiguration - 1; numberObject++) {
+      for (int numberObject = 0; numberObject < countObjectsConfiguration; numberObject++) {
         int currentObjectPoint = startObjectPoint + numberObject * COUNT_ELEMENT_OBJECT;
         // 0 - не редактируется, 1 - с сохранением поддержки, 2 - снято
-        int support = Integer.parseInt(dataStrings[currentObjectPoint + 1]);
+        int support = Integer.parseInt(dataStrings[currentObjectPoint]);
         String guidObject = dataStrings[currentObjectPoint + 2];
         SupportVariant supportVariant = getSupportVariantByInt(support);
         supportMap.put(guidObject, supportVariant);
@@ -66,7 +69,7 @@ public class SupportDataConfiguration {
     }
   }
 
-  public HashMap<String, SupportVariant> getSupportMap() {
+  public Map<String, SupportVariant> getSupportMap() {
     return this.supportMap;
   }
 
