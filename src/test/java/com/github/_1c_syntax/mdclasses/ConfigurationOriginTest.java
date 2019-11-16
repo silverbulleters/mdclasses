@@ -48,4 +48,16 @@ class ConfigurationOriginTest {
     assertThat(configuration).isNotNull();
   }
 
+  @Test
+  void testConfigurationSupport() {
+
+    Path srcPath = Paths.get("D:/DATA/TEMP/support2");
+    ConfigurationBuilder configurationBuilder = new ConfigurationBuilder(srcPath);
+    AbstractConfiguration configuration = configurationBuilder.build();
+
+    // пока просто проверим что там чтото есть
+    assertThat(configuration.getModulesBySupport().size()).isNotZero();
+
+  }
+
 }
