@@ -40,6 +40,7 @@ public class EDTConfiguration extends AbstractConfiguration {
     if (configurationXML != null) {
       initializeProperties(configurationXML);
       initializeModuleType();
+      initializeModuleSupport();
     }
 
   }
@@ -57,6 +58,10 @@ public class EDTConfiguration extends AbstractConfiguration {
 
   private void initializeModuleType() {
     setModulesByType(Common.getModuleTypesByPath(rootPath));
+  }
+
+  private void initializeModuleSupport() {
+    setModulesBySupport(Common.getModuleSupportByPath(this, modulesByType));
   }
 
 }

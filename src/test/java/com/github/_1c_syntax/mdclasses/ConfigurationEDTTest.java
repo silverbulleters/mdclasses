@@ -1,11 +1,8 @@
 package com.github._1c_syntax.mdclasses;
 
+import com.github._1c_syntax.mdclasses.metadata.additional.*;
 import com.github._1c_syntax.mdclasses.metadata.configurations.AbstractConfiguration;
 import com.github._1c_syntax.mdclasses.metadata.ConfigurationBuilder;
-import com.github._1c_syntax.mdclasses.metadata.additional.CompatibilityMode;
-import com.github._1c_syntax.mdclasses.metadata.additional.ConfigurationSource;
-import com.github._1c_syntax.mdclasses.metadata.additional.ModuleType;
-import com.github._1c_syntax.mdclasses.metadata.additional.ScriptVariant;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -15,6 +12,9 @@ import java.nio.file.Paths;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ConfigurationEDTTest {
+
+  private final String PATH_TO_SUPPORT = "src/test/resources/support/edt";
+
   @Test
   void testBuilder() {
 
@@ -43,6 +43,26 @@ public class ConfigurationEDTTest {
     AbstractConfiguration configuration = configurationBuilder.build();
 
     assertThat(configuration).isNotNull();
+  }
+
+  @Test
+  void testConfigurationSupport() {
+
+    Path srcPath = Paths.get(PATH_TO_SUPPORT);
+    ConfigurationBuilder configurationBuilder = new ConfigurationBuilder(srcPath);
+    AbstractConfiguration configuration = configurationBuilder.build();
+
+    assertThat(configuration.getModulesBySupport().size()).isNotZero();
+
+    Path path1 = Paths.get(PATH_TO_SUPPORT, "src/Catalogs/ПервыйСправочник/ObjectModule.bsl").toAbsolutePath();
+    assertThat(configuration.getModuleSupport(path1.toUri())).isEqualTo(SupportVariant.NOT_EDITABLE);
+
+    Path path2 = Paths.get(PATH_TO_SUPPORT, "src/Configuration/SessionModule.bsl").toAbsolutePath();
+    assertThat(configuration.getModuleSupport(path2.toUri())).isEqualTo(SupportVariant.SAVED);
+
+    Path path3 = Paths.get(PATH_TO_SUPPORT, "src/Documents/ПервыйДокумент/ObjectModule.bsl").toAbsolutePath();
+    assertThat(configuration.getModuleSupport(path3.toUri())).isEqualTo(SupportVariant.OFF);
+
   }
 
 }

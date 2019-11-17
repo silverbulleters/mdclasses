@@ -77,7 +77,7 @@ public class DesignConfiguration extends AbstractConfiguration {
   }
 
   private void initializeModuleSupport() {
-    setModulesBySupport(Common.getModuleSupportByPath(rootPath, modulesByType));
+    setModulesBySupport(Common.getModuleSupportByPath(this, modulesByType));
   }
 
 }
