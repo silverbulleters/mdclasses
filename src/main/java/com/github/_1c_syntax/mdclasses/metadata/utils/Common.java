@@ -3,6 +3,8 @@ package com.github._1c_syntax.mdclasses.metadata.utils;
 import com.github._1c_syntax.mdclasses.metadata.SupportDataConfiguration;
 import com.github._1c_syntax.mdclasses.metadata.additional.ModuleType;
 import com.github._1c_syntax.mdclasses.metadata.additional.SupportVariant;
+import com.github._1c_syntax.mdclasses.metadata.configurations.AbstractConfiguration;
+import com.github._1c_syntax.mdclasses.metadata.configurations.EDTConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
@@ -31,6 +33,7 @@ public class Common {
   public static final String REGEX_GUID = "uuid=\"(.*)\"";
   public static final Pattern PATTERN_REGEX_GUID = Pattern.compile(REGEX_GUID, Pattern.MULTILINE);
   public static final String EXTENSION_XML = "xml";
+  public static final String EXTENSION_MDO = "mdo";
 
   public static ModuleType changeModuleTypeByFileName(String fileName, String secondFileName) {
 
@@ -81,19 +84,28 @@ public class Common {
       String secondFileName = elementsPath[elementsPath.length - 2];
       String fileName = FilenameUtils.getBaseName(elementsPath[elementsPath.length - 1]);
       ModuleType moduleType = Common.changeModuleTypeByFileName(fileName, secondFileName);
-      modulesByType.put(file.toURI(), moduleType);
+      modulesByType.put(file.toPath().toAbsolutePath().toUri(), moduleType);
     });
 
     return modulesByType;
 
   }
 
-  public static Map<URI, SupportVariant> getModuleSupportByPath(Path rootPath, Map<URI, ModuleType> modulesByType) {
+  public static Map<URI, SupportVariant> getModuleSupportByPath(AbstractConfiguration configuration, Map<URI, ModuleType> modulesByType) {
 
+    final Path rootPath;
+    boolean isEDT = configuration instanceof EDTConfiguration;
     Map<URI, SupportVariant> modulesBySupport = new HashMap<>();
 
-    // TODO: для EDT по другому
-    File fileParentConfiguration = new File(rootPath.toString(), "Ext/ParentConfigurations.bin");
+    File fileParentConfiguration;
+    if (isEDT) {
+      rootPath = Paths.get(configuration.getRootPath().toString(), "src");
+      fileParentConfiguration = new File(rootPath.toString(), "Configuration/ParentConfigurations.bin");
+    }
+    else {
+      rootPath = configuration.getRootPath();
+      fileParentConfiguration = new File(rootPath.toString(), "Ext/ParentConfigurations.bin");
+    }
 
     if (fileParentConfiguration.exists()) {
       SupportDataConfiguration supportDataConfiguration = new SupportDataConfiguration(fileParentConfiguration.toPath());
@@ -103,20 +115,29 @@ public class Common {
       Collection<File> files = FileUtils.listFiles(rootPath.toFile(), new String[]{EXTENSION_BSL}, true);
 
       files.parallelStream().forEach(file -> {
-        URI uri = file.toURI();
+        URI uri = file.toPath().toAbsolutePath().toUri();
         String[] elementsPath =
             file.toPath().toString().replace(rootPathString, "").split(FILE_SEPARATOR);
 
         SupportVariant moduleSupport = null;
-        String objectGuid = getObjectGuid(rootPath, uri, elementsPath, modulesByType.get(uri));
-        if (!objectGuid.isEmpty()) {
+        ModuleType moduleType = modulesByType.get(uri);
+        String objectGuid = "";
+        if (isEDT) {
+          objectGuid = getObjectGuidEDT(rootPath, elementsPath, moduleType);
+        } else {
+          objectGuid = getObjectGuidOriginal(rootPath, elementsPath, moduleType);
+        }
+
+        if (objectGuid.isEmpty()) {
+          LOGGER.info("Не удалось найти идентфикатор по объекту " + uri.toString());
+        }
+        else {
           moduleSupport = supportMap.get(objectGuid);
         }
 
         if (moduleSupport == null) {
           moduleSupport = SupportVariant.NONE;
         }
-
         modulesBySupport.put(uri, moduleSupport);
 
       });
@@ -124,38 +145,58 @@ public class Common {
     return modulesBySupport;
   }
 
-
-  private static String getObjectGuid(Path rootPath, URI uri, String[] elementsPath, ModuleType moduleType) {
+  private static String getObjectGuidEDT(Path rootPath, String[] elementsPath, ModuleType moduleType) {
     String guid = "";
-    String path = "";
+    Path path = null;
     if (moduleType == ModuleType.ApplicationModule
         || moduleType == ModuleType.ExternalConnectionModule
         || moduleType == ModuleType.ManagedApplicationModule
         || moduleType == ModuleType.OrdinaryApplicationModule
         || moduleType == ModuleType.SessionModule) {
-      path = new File(rootPath.toString(), "Configuration.xml").toPath().toString();
+
+      path = new File(rootPath.toString(), "Configuration/Configuration.mdo").toPath();
+
+    } else {
+      String second = elementsPath[elementsPath.length - 3];
+      if (second.equalsIgnoreCase("Commands") || (second.equalsIgnoreCase("Forms"))) {
+        path = getSimplePath(rootPath, elementsPath, 4, EXTENSION_MDO);
+      }
+      else {
+        path = getSimplePath(rootPath, elementsPath, 2, EXTENSION_MDO);
+      }
+    }
+    return getGuidFromFile(path);
+  }
+
+  private static String getObjectGuidOriginal(Path rootPath, String[] elementsPath, ModuleType moduleType) {
+    String guid = "";
+    Path path;
+    if (moduleType == ModuleType.ApplicationModule
+        || moduleType == ModuleType.ExternalConnectionModule
+        || moduleType == ModuleType.ManagedApplicationModule
+        || moduleType == ModuleType.OrdinaryApplicationModule
+        || moduleType == ModuleType.SessionModule) {
+      path = new File(rootPath.toString(), "Configuration.xml").toPath();
     } else {
       String currentElement = elementsPath[elementsPath.length - 2];
       if (currentElement.equalsIgnoreCase("Ext")) {
         String second = elementsPath[elementsPath.length - 4];
         if (second.equalsIgnoreCase("Commands")) {
-          path = getSimplePath(rootPath, elementsPath, 5);
+          path = getSimplePath(rootPath, elementsPath, 5, EXTENSION_XML);
         } else {
-          path = getSimplePath(rootPath, elementsPath, 3);
+          path = getSimplePath(rootPath, elementsPath, 3, EXTENSION_XML);
         }
       } else if (currentElement.equalsIgnoreCase("Form")) {
-        path = getSimplePath(rootPath, elementsPath, 4);
+        path = getSimplePath(rootPath, elementsPath, 4, EXTENSION_XML);
       } else {
-        LOGGER.info("Не найден идентификатор файла: " + uri.toString());
+        return guid;
       }
     }
-
-    guid = getGuidByFile(path);
-    return guid;
+    return getGuidFromFile(path);
   }
 
-  public static String getGuidByFile(String path) {
-    File xml = new File(path);
+  public static String getGuidFromFile(Path path) {
+    File xml = path.toFile();
     String guid = "";
     if (xml.exists()) {
       guid = findGuidIntoFileXML(xml);
@@ -163,18 +204,24 @@ public class Common {
     return guid;
   }
 
-  public static String getSimplePath(Path rootPath, String[] elementsPath, int startPosition) {
+  public static Path getSimplePath(Path rootPath, String[] elementsPath, int startPosition, String extension) {
     String path = "";
+    String lastElement = "";
     int position = 0;
     for (String el : elementsPath) {
       if (position == elementsPath.length - startPosition + 1) {
         break;
       }
       path += el + System.getProperty("file.separator");
+      lastElement = el;
       position++;
     }
-    path = path.substring(0, path.length() - 1) + "." + EXTENSION_XML;
-    return new File(rootPath.toString(), path).toPath().toString();
+    if (extension.equals(EXTENSION_XML)) {
+      path = path.substring(0, path.length() - 1) + "." + extension;
+    } else {
+      path = path + lastElement + "." + extension;
+    }
+    return Paths.get(rootPath.toString(), path).toAbsolutePath();
   }
 
   public static String findGuidIntoFileXML(File file) {
@@ -190,22 +237,11 @@ public class Common {
   public static String getContentFile(File file) {
     String content = "";
     try {
-      content = readFile(file.toPath());
-    } catch (Exception e) {
-
+      content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      LOGGER.error("Don't read bin file", e);
     }
     return content;
-  }
-
-  public static String readFile(Path path) {
-    String result = "";
-    try {
-      result = new String(Files.readAllBytes(Paths.get(path.toUri())), StandardCharsets.UTF_8);
-    } catch (IOException e) {
-      //LOGGER.error("Don't read bin file", e);
-    }
-    return result;
-
   }
 
 }
