@@ -69,4 +69,24 @@ public class ConfigurationEDTTest {
 
   }
 
+  @Test
+  void testConfigurationSupport() {
+
+    Path srcPath = Paths.get(PATH_TO_SUPPORT);
+    ConfigurationBuilder configurationBuilder = new ConfigurationBuilder(srcPath);
+    AbstractConfiguration configuration = configurationBuilder.build();
+
+    assertThat(configuration.getModulesBySupport().size()).isNotZero();
+
+    Path path1 = Paths.get(PATH_TO_SUPPORT, "src/Catalogs/ПервыйСправочник/ObjectModule.bsl").toAbsolutePath();
+    assertThat(configuration.getModuleSupport(path1.toUri())).isEqualTo(SupportVariant.NOT_EDITABLE);
+
+    Path path2 = Paths.get(PATH_TO_SUPPORT, "src/Configuration/SessionModule.bsl").toAbsolutePath();
+    assertThat(configuration.getModuleSupport(path2.toUri())).isEqualTo(SupportVariant.SAVED);
+
+    Path path3 = Paths.get(PATH_TO_SUPPORT, "src/Documents/ПервыйДокумент/ObjectModule.bsl").toAbsolutePath();
+    assertThat(configuration.getModuleSupport(path3.toUri())).isEqualTo(SupportVariant.OFF);
+
+  }
+
 }
