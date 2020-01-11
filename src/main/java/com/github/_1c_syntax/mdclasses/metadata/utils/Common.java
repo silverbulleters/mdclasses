@@ -5,6 +5,7 @@ import com.github._1c_syntax.mdclasses.metadata.SupportConfiguration;
 import com.github._1c_syntax.mdclasses.metadata.additional.ConfigurationSource;
 import com.github._1c_syntax.mdclasses.metadata.additional.ModuleType;
 import com.github._1c_syntax.mdclasses.metadata.additional.SupportVariant;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -83,7 +84,7 @@ public class Common {
       String secondFileName = elementsPath[elementsPath.length - 2];
       String fileName = FilenameUtils.getBaseName(elementsPath[elementsPath.length - 1]);
       ModuleType moduleType = Common.changeModuleTypeByFileName(fileName, secondFileName);
-      modulesByType.put(file.toURI(), moduleType);
+      modulesByType.put(getAbsolutePath(file).toUri(), moduleType);
     });
 
     return modulesByType;
@@ -113,7 +114,7 @@ public class Common {
       Collection<File> files = FileUtils.listFiles(rootPath.toFile(), new String[]{EXTENSION_BSL}, true);
 
       files.parallelStream().forEach(file -> {
-        URI uri = file.toPath().toAbsolutePath().toUri();
+        URI uri = getAbsolutePath(file).toUri();
         String[] elementsPath =
           file.toPath().toString().replace(rootPathString, "").split(FILE_SEPARATOR);
 
@@ -239,6 +240,11 @@ public class Common {
       || moduleType == ModuleType.ManagedApplicationModule
       || moduleType == ModuleType.OrdinaryApplicationModule
       || moduleType == ModuleType.SessionModule;
+  }
+
+  @SneakyThrows
+  public static Path getAbsolutePath(File file) {
+    return file.getCanonicalFile().toPath().toAbsolutePath();
   }
 
 }
