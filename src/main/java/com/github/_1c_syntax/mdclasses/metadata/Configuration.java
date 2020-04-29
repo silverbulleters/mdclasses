@@ -37,10 +37,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Value
 @Slf4j
@@ -68,6 +67,9 @@ public class Configuration {
   Map<String, MDObjectBase> childrenByMdoRef;
   Path rootPath;
 
+  // context
+  Map<String, String> globalMethodContext;
+
   private Configuration() {
     this.configurationSource = ConfigurationSource.EMPTY;
     this.children = Collections.emptySet();
@@ -90,6 +92,8 @@ public class Configuration {
     this.modalityUseMode = UseMode.USE;
     this.synchronousExtensionAndAddInCallUseMode = UseMode.USE;
     this.synchronousPlatformExtensionAndAddInCallUseMode = UseMode.USE;
+
+    this.globalMethodContext = Common.fillGlobalMethodContext(compatibilityMode);
   }
 
   private Configuration(MDOConfiguration configurationXml, ConfigurationSource configurationSource, Path rootPath) {
@@ -117,6 +121,8 @@ public class Configuration {
 
     this.modulesByType = Common.getModuleTypesByPath(this);
     this.modulesBySupport = Common.getModuleSupports(this);
+
+    this.globalMethodContext = Common.fillGlobalMethodContext(compatibilityMode);
   }
 
   public static Configuration create() {
@@ -143,4 +149,13 @@ public class Configuration {
   public Map<SupportConfiguration, SupportVariant> getModuleSupport(URI uri) {
     return modulesBySupport.getOrDefault(uri, new HashMap<>());
   }
+
+  public Map<String, String> getGlobalMethods() {
+    return globalMethodContext;
+  }
+
+  public String getGlobalMethod(String key) {
+    return globalMethodContext.get(key);
+  }
+
 }

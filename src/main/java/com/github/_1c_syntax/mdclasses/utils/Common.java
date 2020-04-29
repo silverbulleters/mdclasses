@@ -24,25 +24,19 @@ package com.github._1c_syntax.mdclasses.utils;
 import com.github._1c_syntax.mdclasses.mdo.MDObjectBase;
 import com.github._1c_syntax.mdclasses.metadata.Configuration;
 import com.github._1c_syntax.mdclasses.metadata.SupportConfiguration;
-import com.github._1c_syntax.mdclasses.metadata.additional.MDOType;
-import com.github._1c_syntax.mdclasses.metadata.additional.ModuleType;
-import com.github._1c_syntax.mdclasses.metadata.additional.ParseSupportData;
-import com.github._1c_syntax.mdclasses.metadata.additional.SupportVariant;
+import com.github._1c_syntax.mdclasses.metadata.additional.*;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @UtilityClass
 public class Common {
 
   private static final Map<MDOType, Set<ModuleType>> MODULE_TYPES_FOR_MDO_TYPES = moduleTypesForMDOTypes();
+  private static final CompatibilityMode VERSION_8_3_15 = new CompatibilityMode(3, 15);
 
   public static Map<URI, Map<SupportConfiguration, SupportVariant>> getModuleSupports(Configuration configuration) {
     Map<URI, Map<SupportConfiguration, SupportVariant>> modulesBySupport = new HashMap<>();
@@ -204,6 +198,23 @@ public class Common {
     }
 
     return result;
+  }
+
+  public Map<String, String> fillGlobalMethodContext(CompatibilityMode compatibilityMode) {
+
+    // пока делаем в виде строки, потом лучше обернуть в класс. Возможно даже MethodSymbol или его аналог
+    TreeMap<String, String> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    map.put("ЗаполнитьЗначенияСвойств", "ЗаполнитьЗначенияСвойств");
+    map.put("FillPropertyValues", "FillPropertyValues");
+    map.put("ПустаяСтрока", "ПустаяСтрока");
+    map.put("IsBlankString", "IsBlankString");
+
+    if (CompatibilityMode.compareTo(compatibilityMode, VERSION_8_3_15) >= 0) {
+      map.put("ПолучитьРазмерДанныхБазыДанных", "ПолучитьРазмерДанныхБазыДанных");
+      map.put("GetDatabaseDataSize", "GetDatabaseDataSize");
+    }
+
+    return map;
   }
 
 }
