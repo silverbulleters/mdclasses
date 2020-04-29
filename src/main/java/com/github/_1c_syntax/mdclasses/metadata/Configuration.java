@@ -21,6 +21,7 @@
  */
 package com.github._1c_syntax.mdclasses.metadata;
 
+import com.github._1c_syntax.mdclasses.mdo.CommonModule;
 import com.github._1c_syntax.mdclasses.mdo.MDOConfiguration;
 import com.github._1c_syntax.mdclasses.mdo.MDObjectBase;
 import com.github._1c_syntax.mdclasses.metadata.additional.CompatibilityMode;
@@ -34,6 +35,7 @@ import com.github._1c_syntax.mdclasses.utils.Common;
 import com.github._1c_syntax.mdclasses.utils.MDOUtils;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -62,6 +64,8 @@ public class Configuration {
   UseMode synchronousPlatformExtensionAndAddInCallUseMode;
 
   Map<URI, ModuleType> modulesByType;
+  Map<String, CommonModule> commonModules;
+  Map<URI, MDObjectBase> modulesByURI;
   Map<URI, Map<SupportConfiguration, SupportVariant>> modulesBySupport;
   Set<MDObjectBase> children;
   Map<String, MDObjectBase> childrenByMdoRef;
@@ -76,6 +80,8 @@ public class Configuration {
     this.childrenByMdoRef = Collections.emptyMap();
     this.modulesByType = Collections.emptyMap();
     this.modulesBySupport = Collections.emptyMap();
+    this.commonModules = new CaseInsensitiveMap<>();
+    this.modulesByURI = Collections.emptyMap();
 
     this.rootPath = null;
     this.name = "";
@@ -123,6 +129,10 @@ public class Configuration {
     this.modulesBySupport = Common.getModuleSupports(this);
 
     this.globalMethodContext = Common.fillGlobalMethodContext(compatibilityMode);
+
+    this.commonModules = Common.getCommonModules(this);
+    this.modulesByURI = Common.getModulesByURI(this);
+
   }
 
   public static Configuration create() {
@@ -150,12 +160,16 @@ public class Configuration {
     return modulesBySupport.getOrDefault(uri, new HashMap<>());
   }
 
+
   public Map<String, String> getGlobalMethods() {
     return globalMethodContext;
   }
 
   public String getGlobalMethod(String key) {
     return globalMethodContext.get(key);
+
+  public Optional<CommonModule> getCommonModule(String name) {
+    return Optional.ofNullable(commonModules.get(name));
   }
 
 }
