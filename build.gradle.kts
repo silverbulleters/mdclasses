@@ -37,7 +37,7 @@ dependencies {
     implementation("org.apache.commons", "commons-lang3", "3.9")
     implementation("com.github.1c-syntax", "utils", "0.2.1")
 
-    implementation("com.github.1c-syntax:bsl-context:3614f80a")
+    implementation("com.github.1c-syntax", "bsl-context", "41e4a3fc")
 
     // генерики
     compileOnly("org.projectlombok", "lombok", lombok.version)
