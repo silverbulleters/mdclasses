@@ -9,6 +9,7 @@ plugins {
     id("com.github.gradle-git-version-calculator") version "1.1.0"
     id("io.franzbecker.gradle-lombok") version "3.1.0"
     id("org.sonarqube") version "2.7.1"
+    id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
 group = "com.github.1c-syntax"
@@ -35,6 +36,9 @@ dependencies {
     implementation("commons-io", "commons-io", "2.6")
     implementation("org.apache.commons", "commons-lang3", "3.9")
     implementation("com.github.1c-syntax", "utils", "0.2.1")
+
+    implementation("com.github.1c-syntax:bsl-context:3614f80a")
+
     // генерики
     compileOnly("org.projectlombok", "lombok", lombok.version)
     // тестирование
@@ -42,6 +46,9 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter", "junit-jupiter-engine", junitVersion)
     testImplementation("org.assertj", "assertj-core", "3.12.2")
     testImplementation("com.ginsberg", "junit5-system-exit", "1.0.0")
+
+    // FIXME: debug!
+//    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
 }
 
 configure<JavaPluginConvention> {
@@ -75,6 +82,21 @@ tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-Xlint:unchecked")
     options.compilerArgs.add("-parameters")
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "com.github._1c_syntax.bsl.languageserver.BSLLSPLauncher"
+        attributes["Implementation-Version"] = archiveVersion.get()
+    }
+
+    enabled = false
+    dependsOn(tasks.shadowJar)
+}
+tasks.shadowJar {
+    project.configurations.implementation.get().isCanBeResolved = true
+    configurations = listOf(project.configurations["implementation"])
+    archiveClassifier.set("")
 }
 
 sonarqube {

@@ -21,18 +21,14 @@
  */
 package com.github._1c_syntax.mdclasses.metadata;
 
+import com.github._1c_syntax.bsl.context.entity.AbstractMethod;
 import com.github._1c_syntax.mdclasses.mdo.CommonModule;
 import com.github._1c_syntax.mdclasses.mdo.MDOConfiguration;
 import com.github._1c_syntax.mdclasses.mdo.MDObjectBase;
-import com.github._1c_syntax.mdclasses.metadata.additional.CompatibilityMode;
-import com.github._1c_syntax.mdclasses.metadata.additional.ConfigurationSource;
-import com.github._1c_syntax.mdclasses.metadata.additional.MDOType;
-import com.github._1c_syntax.mdclasses.metadata.additional.ModuleType;
-import com.github._1c_syntax.mdclasses.metadata.additional.ScriptVariant;
-import com.github._1c_syntax.mdclasses.metadata.additional.SupportVariant;
-import com.github._1c_syntax.mdclasses.metadata.additional.UseMode;
+import com.github._1c_syntax.mdclasses.metadata.additional.*;
 import com.github._1c_syntax.mdclasses.utils.Common;
 import com.github._1c_syntax.mdclasses.utils.MDOUtils;
+import lombok.Getter;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
@@ -40,8 +36,6 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 @Value
 @Slf4j
@@ -72,7 +66,8 @@ public class Configuration {
   Path rootPath;
 
   // context
-  Map<String, String> globalMethodContext;
+  @Getter(lazy = true)
+  Map<String, AbstractMethod> globalMethodContext = initializeGlobalMethodContext();
 
   private Configuration() {
     this.configurationSource = ConfigurationSource.EMPTY;
@@ -98,8 +93,6 @@ public class Configuration {
     this.modalityUseMode = UseMode.USE;
     this.synchronousExtensionAndAddInCallUseMode = UseMode.USE;
     this.synchronousPlatformExtensionAndAddInCallUseMode = UseMode.USE;
-
-    this.globalMethodContext = Common.fillGlobalMethodContext(compatibilityMode);
   }
 
   private Configuration(MDOConfiguration configurationXml, ConfigurationSource configurationSource, Path rootPath) {
@@ -124,15 +117,10 @@ public class Configuration {
     this.modalityUseMode = configurationXml.getModalityUseMode();
     this.synchronousExtensionAndAddInCallUseMode = configurationXml.getSynchronousExtensionAndAddInCallUseMode();
     this.synchronousPlatformExtensionAndAddInCallUseMode = configurationXml.getSynchronousPlatformExtensionAndAddInCallUseMode();
-
     this.modulesByType = Common.getModuleTypesByPath(this);
     this.modulesBySupport = Common.getModuleSupports(this);
-
-    this.globalMethodContext = Common.fillGlobalMethodContext(compatibilityMode);
-
     this.commonModules = Common.getCommonModules(this);
     this.modulesByURI = Common.getModulesByURI(this);
-
   }
 
   public static Configuration create() {
@@ -160,16 +148,19 @@ public class Configuration {
     return modulesBySupport.getOrDefault(uri, new HashMap<>());
   }
 
-
-  public Map<String, String> getGlobalMethods() {
-    return globalMethodContext;
+  public Map<String, AbstractMethod> getGlobalMethods() {
+    return getGlobalMethodContext();
   }
 
-  public String getGlobalMethod(String key) {
-    return globalMethodContext.get(key);
+  public Optional<AbstractMethod> getGlobalMethod(String key) {
+    return Optional.ofNullable(getGlobalMethodContext().get(key));
+  }
 
   public Optional<CommonModule> getCommonModule(String name) {
     return Optional.ofNullable(commonModules.get(name));
   }
 
+  private Map<String, AbstractMethod> initializeGlobalMethodContext() {
+    return Common.fillGlobalMethodContext(compatibilityMode);
+  }
 }

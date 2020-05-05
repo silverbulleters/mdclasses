@@ -21,6 +21,10 @@
  */
 package com.github._1c_syntax.mdclasses.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github._1c_syntax.bsl.context.entity.AbstractMethod;
+import com.github._1c_syntax.mdclasses.context.MDOMethod;
+import com.github._1c_syntax.mdclasses.deserialize.context.ContextJSON;
 import com.github._1c_syntax.mdclasses.mdo.CommonModule;
 import com.github._1c_syntax.mdclasses.mdo.MDObjectBase;
 import com.github._1c_syntax.mdclasses.metadata.Configuration;
@@ -30,6 +34,7 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 
@@ -242,21 +247,54 @@ public class Common {
     return result;
   }
 
-  public Map<String, String> fillGlobalMethodContext(CompatibilityMode compatibilityMode) {
+  public Map<String, AbstractMethod> fillGlobalMethodContext(CompatibilityMode compatibilityMode) {
+    Map<String, AbstractMethod> map = new CaseInsensitiveMap<>();
 
-    // пока делаем в виде строки, потом лучше обернуть в класс. Возможно даже MethodSymbol или его аналог
-    TreeMap<String, String> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    map.put("ЗаполнитьЗначенияСвойств", "ЗаполнитьЗначенияСвойств");
-    map.put("FillPropertyValues", "FillPropertyValues");
-    map.put("ПустаяСтрока", "ПустаяСтрока");
-    map.put("IsBlankString", "IsBlankString");
-
-    if (CompatibilityMode.compareTo(compatibilityMode, VERSION_8_3_15) >= 0) {
-      map.put("ПолучитьРазмерДанныхБазыДанных", "ПолучитьРазмерДанныхБазыДанных");
-      map.put("GetDatabaseDataSize", "GetDatabaseDataSize");
+    var url = Common.class.getResource(getPathToContextFile(compatibilityMode));
+    if (url == null) {
+      url = Common.class.getResource(getPathToContextFile(new CompatibilityMode()));
     }
 
+    ContextJSON context;
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      context = mapper.readValue(url, ContextJSON.class);
+    } catch (IOException e) {
+      LOGGER.error("При чтение JSON проблема", e);
+      return map;
+    }
+
+    context.getGlobal().getMethods().forEach(
+      methodJSON -> {
+        var method = new MDOMethod();
+        method.setName(methodJSON.getName().getRu());
+        method.setNameEn(methodJSON.getName().getEn());
+        method.setFunction(!methodJSON.getReturnedValues().isEmpty());
+        addMethodToMap(map, method);
+      }
+    );
+
     return map;
+  }
+
+  private String getPathToContextFile(CompatibilityMode compatibilityMode) {
+    String version;
+    CompatibilityMode modeForVersion = compatibilityMode;
+    if (CompatibilityMode.compareTo(compatibilityMode, new CompatibilityMode()) == 0) {
+      // TODO: а какую версию отдавать без режима совместимости?
+      modeForVersion = new CompatibilityMode(3,8);
+    }
+    version = String.join(
+      ".",
+      String.valueOf(modeForVersion.getMajor()),
+      String.valueOf(modeForVersion.getMinor()),
+      String.valueOf(modeForVersion.getVersion()));
+    return String.format("/context/%s.json", version);
+  }
+
+  private void addMethodToMap(Map<String, AbstractMethod> map, MDOMethod method) {
+    map.put(method.getName(), method);
+    map.put(method.getNameEn(), method);
   }
 
 }
