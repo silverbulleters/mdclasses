@@ -32,7 +32,6 @@ import java.util.Map;
 public class MDEngine implements BSLEngine {
 
   Configuration configuration;
-  Map<String, Method> globalMethods;
 
   @Override
   public Map<String, Method> getGlobalMethods() {
