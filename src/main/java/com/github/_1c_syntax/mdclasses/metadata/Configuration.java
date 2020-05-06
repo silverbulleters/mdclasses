@@ -21,7 +21,7 @@
  */
 package com.github._1c_syntax.mdclasses.metadata;
 
-import com.github._1c_syntax.bsl.context.entity.AbstractMethod;
+import com.github._1c_syntax.bsl.context.component.Method;
 import com.github._1c_syntax.mdclasses.mdo.CommonModule;
 import com.github._1c_syntax.mdclasses.mdo.MDOConfiguration;
 import com.github._1c_syntax.mdclasses.mdo.MDObjectBase;
@@ -67,7 +67,7 @@ public class Configuration {
 
   // context
   @Getter(lazy = true)
-  Map<String, AbstractMethod> globalMethodContext = initializeGlobalMethodContext();
+  Map<String, Method> globalMethodsPlatform = initializeGlobalMethodPlatform();
 
   private Configuration() {
     this.configurationSource = ConfigurationSource.EMPTY;
@@ -148,19 +148,16 @@ public class Configuration {
     return modulesBySupport.getOrDefault(uri, new HashMap<>());
   }
 
-  public Map<String, AbstractMethod> getGlobalMethods() {
-    return getGlobalMethodContext();
-  }
-
-  public Optional<AbstractMethod> getGlobalMethod(String key) {
-    return Optional.ofNullable(getGlobalMethodContext().get(key));
-  }
-
   public Optional<CommonModule> getCommonModule(String name) {
     return Optional.ofNullable(commonModules.get(name));
   }
 
-  private Map<String, AbstractMethod> initializeGlobalMethodContext() {
+  private Map<String, Method> initializeGlobalMethodPlatform() {
     return Common.fillGlobalMethodContext(compatibilityMode);
   }
+
+  public Optional<Method> getGlobalMethod(String methodName) {
+    return Optional.ofNullable(getGlobalMethodsPlatform().get(methodName));
+  }
+
 }

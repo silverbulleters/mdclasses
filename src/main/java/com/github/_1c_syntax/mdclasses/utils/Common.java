@@ -22,8 +22,7 @@
 package com.github._1c_syntax.mdclasses.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github._1c_syntax.bsl.context.entity.AbstractMethod;
-import com.github._1c_syntax.mdclasses.context.MDOMethod;
+import com.github._1c_syntax.bsl.context.component.Method;
 import com.github._1c_syntax.mdclasses.deserialize.context.ContextJSON;
 import com.github._1c_syntax.mdclasses.mdo.CommonModule;
 import com.github._1c_syntax.mdclasses.mdo.MDObjectBase;
@@ -247,8 +246,8 @@ public class Common {
     return result;
   }
 
-  public Map<String, AbstractMethod> fillGlobalMethodContext(CompatibilityMode compatibilityMode) {
-    Map<String, AbstractMethod> map = new CaseInsensitiveMap<>();
+  public Map<String, Method> fillGlobalMethodContext(CompatibilityMode compatibilityMode) {
+    Map<String, Method> map = new CaseInsensitiveMap<>();
 
     var url = Common.class.getResource(getPathToContextFile(compatibilityMode));
     if (url == null) {
@@ -264,15 +263,13 @@ public class Common {
       return map;
     }
 
-    context.getGlobal().getMethods().forEach(
-      methodJSON -> {
-        var method = new MDOMethod();
-        method.setName(methodJSON.getName().getRu());
-        method.setNameEn(methodJSON.getName().getEn());
-        method.setFunction(!methodJSON.getReturnedValues().isEmpty());
-        addMethodToMap(map, method);
-      }
-    );
+    context.getGlobal().getMethods().stream()
+      .map(methodJSON -> Method.builder()
+        .name(methodJSON.getName().getRu())
+        .nameEn(methodJSON.getName().getEn())
+        .function(!methodJSON.getReturnedValues().isEmpty())
+        .build())
+      .forEach(method -> addMethodToMap(map, method));
 
     return map;
   }
@@ -282,7 +279,7 @@ public class Common {
     CompatibilityMode modeForVersion = compatibilityMode;
     if (CompatibilityMode.compareTo(compatibilityMode, new CompatibilityMode()) == 0) {
       // TODO: а какую версию отдавать без режима совместимости?
-      modeForVersion = new CompatibilityMode(3,8);
+      modeForVersion = new CompatibilityMode(3, 8);
     }
     version = String.join(
       ".",
@@ -292,7 +289,7 @@ public class Common {
     return String.format("/context/%s.json", version);
   }
 
-  private void addMethodToMap(Map<String, AbstractMethod> map, MDOMethod method) {
+  private void addMethodToMap(Map<String, Method> map, Method method) {
     map.put(method.getName(), method);
     map.put(method.getNameEn(), method);
   }
