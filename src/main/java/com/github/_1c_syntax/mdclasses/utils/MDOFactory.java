@@ -32,6 +32,8 @@ import com.github._1c_syntax.mdclasses.mdo.MDOConfiguration;
 import com.github._1c_syntax.mdclasses.mdo.MDObjectBSL;
 import com.github._1c_syntax.mdclasses.mdo.MDObjectBase;
 import com.github._1c_syntax.mdclasses.mdo.MDObjectComplex;
+import com.github._1c_syntax.mdclasses.mdo.Role;
+import com.github._1c_syntax.mdclasses.mdo.RoleData;
 import com.github._1c_syntax.mdclasses.mdo.Subsystem;
 import com.github._1c_syntax.mdclasses.mdo.TabularSection;
 import com.github._1c_syntax.mdclasses.mdo.Template;
@@ -49,6 +51,7 @@ import com.github._1c_syntax.mdclasses.unmarshal.XStreamFactory;
 import io.vavr.control.Either;
 import lombok.experimental.UtilityClass;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -127,6 +130,14 @@ public class MDOFactory {
           });
       }
 
+      // загрузка данных роли
+      if (mdoValue instanceof Role) {
+        var roleDataPath = MDOPathUtils.getRoleDataPath(configurationSource,
+                mdoPath.getParent().toString(), mdoValue.getName());
+        var roleDataOptional = readRoleData(roleDataPath);
+        roleDataOptional.ifPresent(((Role) mdoValue)::setRoleData);
+      }
+
       if (mdoValue instanceof MDObjectComplex) {
         ((MDObjectComplex) mdoValue).getForms().parallelStream().forEach(form -> {
           Path formDataPath = MDOPathUtils.getFormDataPath(configurationSource, mdoPath.getParent().toString(),
@@ -135,13 +146,27 @@ public class MDOFactory {
           formDataOptional.ifPresent(form::setData);
         });
       }
-
+      
     });
 
     return mdo;
   }
 
   /**
+   * Читает данные роли из файла Rights
+   *
+   * @param roleDataPath - путь к файлу прав роли.
+   * @return {@code Optional} POJO представление данных ролей
+   */
+  private static Optional<RoleData> readRoleData(Path roleDataPath) {
+    if (Files.notExists(roleDataPath)) {
+      return Optional.empty();
+    }
+
+    return Optional.ofNullable((RoleData) XStreamFactory.fromXML(roleDataPath.toFile()));
+    
+  }
+
    * Читает данные формы (FormData) в объект из файла
    *
    * @param configurationSource - формат исходных файлов
