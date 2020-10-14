@@ -167,7 +167,8 @@ public class MDOFactory {
     
   }
 
-   * Читает данные формы (FormData) в объект из файла
+   /**
+    *  Читает данные формы (FormData) в объект из файла
    *
    * @param configurationSource - формат исходных файлов
    * @param path                - путь к файлу описания объекта
