@@ -21,12 +21,16 @@
  */
 package com.github._1c_syntax.mdclasses.mdo.wrapper.form;
 
+import com.github._1c_syntax.mdclasses.metadata.additional.SourcePosition;
+import com.github._1c_syntax.mdclasses.unmarshal.DesignerAttributeSettingConverter;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
+import com.thoughtworks.xstream.annotations.XStreamConverter;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
+@XStreamConverter(DesignerAttributeSettingConverter.class)
 public class DesignerAttributeSetting {
   @XStreamAlias("xsi:type")
   private String type;
@@ -43,4 +47,5 @@ public class DesignerAttributeSetting {
   private boolean customQuery = false;
   @XStreamAlias("QueryText")
   private String queryText = "";
+  private SourcePosition position;
 }

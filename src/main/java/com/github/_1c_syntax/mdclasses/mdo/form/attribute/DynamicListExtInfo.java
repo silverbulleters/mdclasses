@@ -48,6 +48,7 @@ public class DynamicListExtInfo extends ExtInfo {
     setDynamicDataRead(setting.isDynamicDataRead());
     setCustomQuery(setting.isCustomQuery());
     setQueryText(setting.getQueryText());
+    setPosition(setting.getPosition());
     setGetInvisibleFieldPresentations(setting.isGetInvisibleFieldPresentations());
     setAutoSaveUserSettings(setting.isAutoSaveUserSettings());
   }
