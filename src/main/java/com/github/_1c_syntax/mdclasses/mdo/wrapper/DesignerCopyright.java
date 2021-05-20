@@ -21,5 +21,8 @@
  */
 package com.github._1c_syntax.mdclasses.mdo.wrapper;
 
+/*
+ * Класс расширяет общий, для разделения логического смысла и возможной будущей функциональной разницы
+ */
 public class DesignerCopyright extends DesignerContentItem {
 }
